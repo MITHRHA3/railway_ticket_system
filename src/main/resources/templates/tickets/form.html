@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Ticket Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e3f2fd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 35px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+            width: 100%;
+            max-width: 450px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #0d47a1;
+            margin-bottom: 30px;
+            font-size: 1.9rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 500;
+            color: #0d47a1;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 20px;
+            border: 1px solid #90caf9;
+            border-radius: 6px;
+            font-size: 15px;
+            transition: border 0.3s, box-shadow 0.3s;
+        }
+
+        select:focus {
+            border-color: #1976d2;
+            outline: none;
+            box-shadow: 0 0 6px rgba(25, 118, 210, 0.4);
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        button {
+            padding: 12px 20px;
+            background-color: #1976d2;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        button:hover:enabled {
+            background-color: #42a5f5;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background-color: #90caf9;
+            cursor: not-allowed;
+        }
+
+        a.cancel {
+            padding: 12px 20px;
+            background-color: #90caf9;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #0d47a1;
+            font-weight: 600;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        a.cancel:hover {
+            background-color: #64b5f6;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 25px 20px;
+            }
+
+            h1 {
+                font-size: 1.6rem;
+            }
+
+            button, a.cancel {
+                font-size: 15px;
+                padding: 10px 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 th:text="${ticket != null} ? 'Edit Ticket' : 'Create Ticket'"></h1>
+
+        <form id="ticketForm" th:action="${ticket != null} ? @{/tickets/update/{id}(id=${ticket.id})} : @{/tickets}" method="post">
+            
+            <label for="user">Select User:</label>
+            <select name="userId" id="user" required>
+                <option value="">Choose User</option>
+                <option th:each="u : ${users}" 
+                        th:value="${u.id}" 
+                        th:text="${u.name}" 
+                        th:selected="${ticket != null} ? ${ticket.user?.id} == ${u.id} : false">
+                </option>
+            </select>
+
+            <label for="train">Select Train:</label>
+            <select name="trainId" id="train" required>
+                <option value="">Choose Train</option>
+                <option th:each="t : ${trains}" 
+                        th:value="${t.id}" 
+                        th:text="${t.name}" 
+                        th:selected="${ticket != null} ? ${ticket.train?.id} == ${t.id} : false">
+                </option>
+            </select>
+
+            <div class="buttons">
+                <button type="submit" id="saveBtn" disabled>Save Ticket</button>
+                <a th:href="@{/tickets}" class="cancel">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+       
+        const userSelect = document.getElementById('user');
+        const trainSelect = document.getElementById('train');
+        const saveBtn = document.getElementById('saveBtn');
+
+        function toggleSaveButton() {
+            saveBtn.disabled = !(userSelect.value && trainSelect.value);
+        }
+
+        userSelect.addEventListener('change', toggleSaveButton);
+        trainSelect.addEventListener('change', toggleSaveButton);
+
+        const form = document.getElementById('ticketForm');
+        form.addEventListener('submit', function(e) {
+            const confirmed = confirm('Are you sure you want to save this ticket?');
+            if(!confirmed) e.preventDefault();
+        });
+    </script>
+</body>
+
+</html>

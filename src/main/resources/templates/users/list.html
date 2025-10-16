@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Users</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7f8;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 900px;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 25px;
+            font-size: 2rem;
+        }
+
+        .add-user {
+            display: inline-block;
+            padding: 12px 18px;
+            margin-bottom: 25px;
+            background-color: #97c9f4;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .add-user:hover {
+            background-color: #436ba8;
+            transform: translateY(-2px);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 10px;
+        }
+
+        th,
+        td {
+            padding: 14px 18px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #7284ee;
+            color: white;
+            border-radius: 8px 8px 0 0;
+        }
+
+        tr {
+            background-color: #fff;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        td {
+            border-bottom: none;
+        }
+
+        .action-links a {
+            margin-right: 8px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .action-links a.edit {
+            background-color: #80b8e3;
+        }
+
+        .action-links a.edit:hover {
+            background-color: #0b7dda;
+            transform: translateY(-1px);
+        }
+
+        .action-links a.delete {
+            background-color: #b4c0cd;
+        }
+
+        .action-links a.delete:hover {
+            background-color: #3c94bc;
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 600px) {
+            th, td {
+                padding: 10px;
+                font-size: 14px;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            .add-user {
+                padding: 10px 14px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Users</h1>
+        <a href="/users/new" class="add-user">Add New User</a>
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Actions</th>
+            </tr>
+            <tr th:each="user : ${users}">
+                <td th:text="${user.id}"></td>
+                <td th:text="${user.name}"></td>
+                <td th:text="${user.email}"></td>
+                <td class="action-links">
+                    <a th:href="@{/users/edit/{id}(id=${user.id})}" class="edit">Edit</a>
+                    <a th:href="@{/users/delete/{id}(id=${user.id})}" class="delete">Delete</a>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+
+</html>
