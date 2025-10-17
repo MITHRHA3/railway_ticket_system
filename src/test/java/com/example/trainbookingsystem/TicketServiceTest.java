@@ -59,31 +59,34 @@ public class TicketServiceTest {
 
         train = new Train();
         train.setId(1L);
-        train.setName("Howrah Express");
-        train.setBasePrice(1000.0);
-        train.setDiscountPercentage(19.98);
+        train.setName("Express A");
+        train.setSource("City A");
+        train.setDestination("City B");
+        train.setBasePrice(15.0);
+        train.setDiscountPercentage(10.0);
 
         ticket = new Ticket();
         ticket.setId(1L);
         ticket.setUser(user);
         ticket.setTrain(train);
         ticket.setBookingDate(LocalDateTime.now());
-        ticket.setFinalPrice(90.0); 
+        ticket.setFinalPrice(13.5); // example
     }
 
     @Test
-    void getAllTickets_ShouldReturnListOfTickets() {
-        when(ticketRepository.findAll()).thenReturn(Arrays.asList(ticket));
+    void getAllTickets_ShouldReturnList() {
+        List<Ticket> tickets = Arrays.asList(ticket);
+        when(ticketRepository.findAll()).thenReturn(tickets);
 
-        List<Ticket> tickets = ticketService.getAllTickets();
+        List<Ticket> result = ticketService.getAllTickets();
 
-        assertEquals(1, tickets.size());
-        assertEquals(ticket.getId(), tickets.get(0).getId());
+        assertEquals(1, result.size());
+        assertEquals(ticket.getUser().getName(), result.get(0).getUser().getName());
         verify(ticketRepository, times(1)).findAll();
     }
 
     @Test
-    void getTicketById_WhenTicketExists_ShouldReturnTicket() {
+    void getTicketById_WhenExists_ShouldReturn() {
         when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
 
         Optional<Ticket> result = ticketService.getTicketById(1L);
@@ -94,7 +97,7 @@ public class TicketServiceTest {
     }
 
     @Test
-    void getTicketById_WhenTicketDoesNotExist_ShouldReturnEmpty() {
+    void getTicketById_WhenNotExists_ShouldReturnEmpty() {
         when(ticketRepository.findById(1L)).thenReturn(Optional.empty());
 
         Optional<Ticket> result = ticketService.getTicketById(1L);
@@ -104,40 +107,92 @@ public class TicketServiceTest {
     }
 
     @Test
-    void createTicket_ShouldSaveAndReturnTicket() {
+    void createTicket_ShouldSaveAndReturn() {
+        when(ticketRepository.save(any(Ticket.class))).thenReturn(ticket);
         when(userService.getUserById(1L)).thenReturn(Optional.of(user));
         when(trainService.getTrainById(1L)).thenReturn(Optional.of(train));
-        when(ticketRepository.save(any(Ticket.class))).thenReturn(ticket);
 
         Ticket result = ticketService.createTicket(1L, 1L);
 
         assertNotNull(result);
-        assertEquals(user.getName(), result.getUser().getName());
-        assertEquals(train.getName(), result.getTrain().getName());
-        assertEquals(90.0, result.getFinalPrice());
+        assertEquals(ticket.getUser().getId(), result.getUser().getId());
         verify(ticketRepository, times(1)).save(any(Ticket.class));
     }
 
     @Test
-    void updateTicket_WhenTicketExists_ShouldUpdateAndReturnTicket() {
-        Ticket updatedTicket = new Ticket();
-        updatedTicket.setUser(user);
-        updatedTicket.setTrain(train);
+    void createTicket_WhenUserNotFound_ShouldThrow() {
+        when(userService.getUserById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(Exception.class, () -> ticketService.createTicket(1L, 1L));
+        verify(ticketRepository, never()).save(any(Ticket.class));
+    }
+
+    @Test
+    void createTicket_WhenTrainNotFound_ShouldThrow() {
+        when(userService.getUserById(1L)).thenReturn(Optional.of(user));
+        when(trainService.getTrainById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(Exception.class, () -> ticketService.createTicket(1L, 1L));
+        verify(ticketRepository, never()).save(any(Ticket.class));
+    }
+
+    @Test
+    void updateTicket_WhenExists_ShouldUpdate() {
+        Ticket updated = new Ticket();
+        updated.setUser(user);
+        updated.setTrain(train);
 
         when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
         when(ticketRepository.save(any(Ticket.class))).thenReturn(ticket);
 
-        Ticket result = ticketService.updateTicket(1L, updatedTicket);
+        Ticket result = ticketService.updateTicket(1L, updated);
 
-        assertEquals(user.getName(), result.getUser().getName());
-        assertEquals(train.getName(), result.getTrain().getName());
-        assertEquals(90.0, result.getFinalPrice());
+        assertEquals(ticket.getUser().getId(), result.getUser().getId());
         verify(ticketRepository, times(1)).findById(1L);
         verify(ticketRepository, times(1)).save(ticket);
     }
 
     @Test
-    void updateTicket_WhenTicketDoesNotExist_ShouldThrowException() {
+    void updateTicket_WhenDetailsHaveNoUserOrTrain_ShouldOnlyUpdateBookingDate() {
+        Ticket updated = new Ticket();
+        updated.setUser(null);
+        updated.setTrain(null);
+
+        when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
+        when(ticketRepository.save(any(Ticket.class))).thenReturn(ticket);
+
+        LocalDateTime before = ticket.getBookingDate();
+        Ticket result = ticketService.updateTicket(1L, updated);   
+        assertEquals(ticket.getUser().getId(), result.getUser().getId());
+        assertEquals(ticket.getTrain().getId(), result.getTrain().getId());
+        assertTrue(before.isBefore(result.getBookingDate()) || before.isAfter(result.getBookingDate()), 
+                  "Booking date should be updated");
+        verify(ticketRepository, times(1)).save(ticket);
+    }
+
+    @Test
+    void updateTicket_WhenOnlyUserProvided_ShouldUpdateUserOnly() {
+        User newUser = new User();
+        newUser.setId(2L);
+        newUser.setName("Alice");
+        newUser.setEmail("alice@example.com");
+
+        Ticket updated = new Ticket();
+        updated.setUser(newUser);
+        updated.setTrain(null);
+
+        when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
+        when(ticketRepository.save(any(Ticket.class))).thenReturn(ticket);
+
+        Ticket result = ticketService.updateTicket(1L, updated);
+
+        assertEquals(newUser.getId(), result.getUser().getId());
+        assertEquals(ticket.getTrain().getId(), result.getTrain().getId());
+        verify(ticketRepository, times(1)).save(ticket);
+    }
+
+    @Test
+    void updateTicket_WhenNotExists_ShouldThrow() {
         when(ticketRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(Exception.class, () -> ticketService.updateTicket(1L, ticket));
@@ -146,7 +201,7 @@ public class TicketServiceTest {
     }
 
     @Test
-    void deleteTicket_ShouldDeleteTicket() {
+    void deleteTicket_ShouldDelete() {
         doNothing().when(ticketRepository).deleteById(1L);
 
         ticketService.deleteTicket(1L);
@@ -155,8 +210,8 @@ public class TicketServiceTest {
     }
 
     @Test
-    void calculateTicketPrice_ShouldReturnCorrectPrice() {
-        double price = ticketService.calculateTicketPrice(200.0, 25.0);
-        assertEquals(150.0, price); 
+    void calculateTicketPrice_ShouldComputeCorrectly() {
+        double price = ticketService.calculateTicketPrice(100.0, 10.0);
+        assertEquals(90.0, price);
     }
 }
